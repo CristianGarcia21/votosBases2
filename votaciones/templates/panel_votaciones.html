@@ -1,0 +1,11 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'votaciones/estilos.css' %}">
+<div class="form-registro">
+    <h2>Panel de Votaciones</h2>
+    <p>Bienvenido, {{ user.username }}. Aquí podrás participar en las votaciones.</p>
+    <!-- Aquí irán las opciones de votación en el futuro -->
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Cerrar sesión</button>
+    </form>
+</div>

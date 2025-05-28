@@ -1,0 +1,32 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'votaciones/estilos.css' %}">
+<div class="form-registro">
+    <h2>Iniciar sesión</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label>Usuario</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+            <div class="message error">{{ form.username.errors.0 }}</div>
+        {% endif %}
+
+        <label>Contraseña</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+            <div class="message error">{{ form.password.errors.0 }}</div>
+        {% endif %}
+
+        <button type="submit">Entrar</button>
+        <p style="text-align:center; margin-top:16px;">
+            ¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate aquí</a>
+        </p>
+    </form>
+</div>
+
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
