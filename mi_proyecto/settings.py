@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'mi_proyecto.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'localhost:1521/XEPDB1',  # nombre del servicio (no el SID)
+        'NAME': 'localhost:1522/XEPDB1',  # nombre del servicio (no el SID)
         'USER': 'PROYECTO_USER',
         'PASSWORD': '123',
 
@@ -88,7 +88,7 @@ DATABASES = {
         'USER': 'usuario_cloud',
         'PASSWORD': 'contraseña_cloud',
         'HOST': 'host_cloud',
-        'PORT': '1521',
+        'PORT': '1522',
     }
 }
 
