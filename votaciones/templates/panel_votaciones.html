@@ -1,11 +1,55 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'votaciones/estilos.css' %}">
-<div class="form-registro">
-    <h2>Panel de Votaciones</h2>
-    <p>Bienvenido, {{ user.username }}. Aquí podrás participar en las votaciones.</p>
-    <!-- Aquí irán las opciones de votación en el futuro -->
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Cerrar sesión</button>
-    </form>
+
+<!-- Navbar superior -->
+<div style="width:100%; background:var(--color-primary-dark); color:#fff; padding:16px 0; margin-bottom:32px;">
+    <div style="max-width:900px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:1.3em; font-weight:600; letter-spacing:1px;">Votaciones Equipos</span>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" style="background:#fff; color:var(--color-primary-dark); font-weight:600; border-radius:6px; border:none; padding:8px 18px;">Cerrar sesión</button>
+        </form>
+    </div>
+</div>
+
+<div class="form-registro" style="max-width:900px;">
+    <p>Bienvenido, {{ user.username }}. Elige tu opción en cada votación.</p>
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <script>
+    // Imprime en consola la cantidad de votaciones y sus nombres
+    console.log("Votaciones recibidas: {{ votaciones|length }}");
+    {% for v in votaciones %}
+        console.log("Votación: {{ v.id }} - {{ v.nombre }}");
+    {% endfor %}
+    </script>
+
+    {% for votacion in votaciones %}
+        <div style="margin-bottom:32px;">
+            <h3 style="text-align:center; color:var(--color-primary-dark);">{{ votacion.nombre }}</h3>
+            <p style="text-align:center;">{{ votacion.descripcion }}</p>
+            {% if votacion.id in votos_realizados %}
+                <div class="message success" style="text-align:center;">Ya has votado en esta votación.</div>
+            {% else %}
+                <div style="display:flex; justify-content:center; gap:28px; margin-bottom:10px;">
+                    {% for opcion in votacion.opcionvoto_set.all %}
+                        <form method="post" action="{% url 'votar' opcion.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <div style="background:#f8fafc; border:1px solid var(--color-border); border-radius:8px; width:140px; padding:12px; text-align:center;">
+                                <img src="{{ opcion.imagen.url }}" alt="{{ opcion.nombre }}" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;">
+                                <div style="margin-top:8px; font-weight:500;">{{ opcion.nombre }}</div>
+                                <button type="submit" style="width:100%; margin-top:10px;">Votar</button>
+                            </div>
+                        </form>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
 </div>
