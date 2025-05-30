@@ -11,7 +11,12 @@ Este proyecto es una aplicación web de votaciones desarrollada con Django.
 
 1. Clona el repositorio o descarga el código.
 2. Instala las dependencias necesarias (si no lo has hecho):
-3. Asegúrate de estar en la carpeta del proyecto.
+
+- Instalar OracleDB (pip install oracledb)
+- Instalar la libreria Pillow (pip install Pillow)
+- Ejecutar con el comando:
+  python manage.py migrate
+  python manage.py runserver
 
 ## Ejecución
 
