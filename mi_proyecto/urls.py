@@ -21,8 +21,13 @@ from votaciones.views import custom_404
 from votaciones import admin_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+   
+    # PRIMERO tus URLs personalizadas
+    path('api/grafico-modal/<int:votacion_id>/', admin_views.grafico_modal, name='grafico_modal'),
     path('admin/dashboard-votaciones/', admin_views.dashboard_votaciones, name='admin_dashboard_votaciones'),
+    
+    # DESPUÉS las URLs del admin estándar
+    path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('votaciones/', include('votaciones.urls')),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/accounts/login/'), name='logout'),

@@ -13,7 +13,7 @@ class OpcionVotoInline(admin.TabularInline):
     extra = 2  # Cuántas opciones vacías mostrar por defecto
 
 class VotacionAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'get_votos_count')
+    list_display = ('nombre', 'fecha_inicio', 'fecha_fin')
     search_fields = ('nombre', 'descripcion')
     list_filter = ('fecha_inicio', 'fecha_fin')
     inlines = [OpcionVotoInline]

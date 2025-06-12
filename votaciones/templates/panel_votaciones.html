@@ -22,34 +22,217 @@
         </div>
     {% endif %}
 
-    <script>
-    // Imprime en consola la cantidad de votaciones y sus nombres
-    console.log("Votaciones recibidas: {{ votaciones|length }}");
-    {% for v in votaciones %}
-        console.log("Votación: {{ v.id }} - {{ v.nombre }}");
-    {% endfor %}
-    </script>
-
-    {% for votacion in votaciones %}
-        <div style="margin-bottom:32px;">
-            <h3 style="text-align:center; color:var(--color-primary-dark);">{{ votacion.nombre }}</h3>
-            <p style="text-align:center;">{{ votacion.descripcion }}</p>
-            {% if votacion.id in votos_realizados %}
-                <div class="message success" style="text-align:center;">Ya has votado en esta votación.</div>
-            {% else %}
-                <div style="display:flex; justify-content:center; gap:28px; margin-bottom:10px;">
-                    {% for opcion in votacion.opcionvoto_set.all %}
-                        <form method="post" action="{% url 'votar' opcion.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <div style="background:#f8fafc; border:1px solid var(--color-border); border-radius:8px; width:140px; padding:12px; text-align:center;">
+    <!-- Formulario único para todas las votaciones -->
+    <form id="votaciones-form" method="post" action="{% url 'confirmar_votos' %}">
+        {% csrf_token %}
+        
+        {% for votacion in votaciones %}
+            <div style="margin-bottom:32px;">
+                <h3 style="text-align:center; color:var(--color-primary-dark);">{{ votacion.nombre }}</h3>
+                <p style="text-align:center;">{{ votacion.descripcion }}</p>
+                
+                {% if votacion.id in votos_realizados %}
+                    <div class="message success" style="text-align:center;">Ya has votado en esta votación.</div>
+                {% else %}
+                    <div class="opciones-container" style="display:flex; justify-content:center; gap:28px; margin-bottom:10px;">
+                        {% for opcion in votacion.opcionvoto_set.all %}
+                            <div class="opcion-voto" style="background:#f8fafc; border:1px solid var(--color-border); border-radius:8px; width:140px; padding:12px; text-align:center; position:relative; cursor:pointer;" data-opcion-id="{{ opcion.id }}" data-votacion-id="{{ votacion.id }}" data-opcion-nombre="{{ opcion.nombre }}">
                                 <img src="{{ opcion.imagen.url }}" alt="{{ opcion.nombre }}" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;">
                                 <div style="margin-top:8px; font-weight:500;">{{ opcion.nombre }}</div>
-                                <button type="submit" style="width:100%; margin-top:10px;">Votar</button>
+                                
+                                <!-- Círculo de selección -->
+                                <div class="check-circle" style="display:none; position:absolute; top:8px; right:8px; width:24px; height:24px; background:var(--color-primary); border-radius:50%; color:white; text-align:center; line-height:24px;">✓</div>
+                                
+                                <!-- Input oculto para almacenar la selección -->
+                                <input type="radio" name="opcion_{{ votacion.id }}" value="{{ opcion.id }}" style="display:none;">
                             </div>
-                        </form>
-                    {% endfor %}
-                </div>
-            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <!-- Botón para confirmar las selecciones -->
+        <div style="text-align:center; margin-top:20px;">
+            <button type="button" id="confirmar-selecciones" class="btn-primary" style="background:var(--color-primary); color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer;">Confirmar selecciones</button>
         </div>
-    {% endfor %}
+    </form>
 </div>
+
+<!-- Modal de confirmación -->
+<div id="modal-confirmacion" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto;">
+        <h3 style="text-align:center; margin-bottom:20px;">Confirmar votos</h3>
+        
+        <div id="resumen-votos">
+            <!-- Aquí se mostrarán las opciones seleccionadas -->
+        </div>
+        
+        <div style="display:flex; justify-content:center; gap:15px; margin-top:20px;">
+            <button id="btn-volver" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Volver y revisar</button>
+            <button id="btn-confirmar-votos" style="background:var(--color-primary); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Confirmar y votar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+    .opcion-voto {
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .opcion-voto.selected {
+        border: 2px solid var(--color-primary);
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+    
+    .opcion-voto.selected .check-circle {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #modal-confirmacion {
+        display: none;
+    }
+    
+    .votacion-resumen {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 5px;
+    }
+    
+    .error-votacion {
+        color: red;
+        margin: 5px 0;
+    }
+</style>
+
+<!-- Scripts -->
+<script>
+    // Almacena las selecciones del usuario
+    const selecciones = {};
+    
+    // Cuando se hace clic en una opción de voto
+    document.querySelectorAll('.opcion-voto').forEach(opcion => {
+        opcion.addEventListener('click', function() {
+            const votacionId = this.dataset.votacionId;
+            const opcionId = this.dataset.opcionId;
+            const opcionNombre = this.dataset.opcionNombre;
+            
+            // Desmarcar todas las opciones de esta votación
+            document.querySelectorAll(`.opcion-voto[data-votacion-id="${votacionId}"]`).forEach(op => {
+                op.classList.remove('selected');
+                op.querySelector('input').checked = false;
+            });
+            
+            // Marcar esta opción como seleccionada
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+            
+            // Guardar la selección
+            selecciones[votacionId] = {
+                id: opcionId,
+                nombre: opcionNombre
+            };
+            
+            console.log("Selecciones actualizadas:", selecciones);
+        });
+    });
+    
+    // Botón para abrir el modal de confirmación
+    document.getElementById('confirmar-selecciones').addEventListener('click', function() {
+        // Verificar que haya seleccionado al menos una opción
+        if (Object.keys(selecciones).length === 0) {
+            alert('Por favor, selecciona al menos una opción de voto.');
+            return;
+        }
+        
+        // Verificar si hay votaciones sin seleccionar
+        const votacionesPendientes = [];
+        {% for votacion in votaciones %}
+            {% if votacion.id not in votos_realizados %}
+                if (!selecciones['{{ votacion.id }}']) {
+                    votacionesPendientes.push('{{ votacion.nombre }}');
+                }
+            {% endif %}
+        {% endfor %}
+        
+        // Generar el contenido del resumen de votos
+        const resumenContainer = document.getElementById('resumen-votos');
+        resumenContainer.innerHTML = '';
+        
+        // Mostrar advertencia para votaciones no seleccionadas
+        if (votacionesPendientes.length > 0) {
+            const advertencia = document.createElement('div');
+            advertencia.className = 'error-votacion';
+            advertencia.innerHTML = '<strong>Advertencia:</strong> No has seleccionado opción para las siguientes votaciones:<br>' + 
+                                   votacionesPendientes.map(v => `- ${v}`).join('<br>');
+            resumenContainer.appendChild(advertencia);
+        }
+        
+        // Mostrar las opciones seleccionadas
+        {% for votacion in votaciones %}
+            {% if votacion.id not in votos_realizados %}
+                const contenedorVotacion{{ votacion.id }} = document.createElement('div');
+                contenedorVotacion{{ votacion.id }}.className = 'votacion-resumen';
+                
+                if (selecciones['{{ votacion.id }}']) {
+                    contenedorVotacion{{ votacion.id }}.innerHTML = `
+                        <strong>{{ votacion.nombre }}</strong>: ${selecciones['{{ votacion.id }}'].nombre}
+                    `;
+                } else {
+                    contenedorVotacion{{ votacion.id }}.innerHTML = `
+                        <strong>{{ votacion.nombre }}</strong>: <span class="error-votacion">No seleccionada</span>
+                    `;
+                }
+                
+                resumenContainer.appendChild(contenedorVotacion{{ votacion.id }});
+            {% endif %}
+        {% endfor %}
+        
+        // Mostrar el modal
+        document.getElementById('modal-confirmacion').style.display = 'flex';
+    });
+    
+    // Cerrar el modal al hacer clic en "Volver y revisar"
+    document.getElementById('btn-volver').addEventListener('click', function() {
+        document.getElementById('modal-confirmacion').style.display = 'none';
+    });
+    
+    // Enviar el formulario al hacer clic en "Confirmar y votar"
+    document.getElementById('btn-confirmar-votos').addEventListener('click', function() {
+        // Preparar los datos para enviar
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        // Agregar las opciones seleccionadas
+        for (const [votacionId, opcionInfo] of Object.entries(selecciones)) {
+            formData.append(`opcion_${votacionId}`, opcionInfo.id);
+        }
+        
+        // Enviar mediante fetch
+        fetch('{% url "confirmar_votos" %}', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Error al procesar los votos.');
+        }).then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload(); // Recargar para mostrar los resultados
+            } else {
+                alert(data.message);
+                document.getElementById('modal-confirmacion').style.display = 'none';
+            }
+        }).catch(error => {
+            alert('Ocurrió un error al procesar tu voto: ' + error.message);
+            document.getElementById('modal-confirmacion').style.display = 'none';
+        });
+    });
+</script>

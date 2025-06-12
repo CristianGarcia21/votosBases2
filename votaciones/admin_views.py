@@ -221,8 +221,10 @@ def dashboard_votaciones(request):
     print(f"\nTotal de gráficos generados: {len(graficos)}")
     print(f"IDs de votaciones con gráficos: {list(graficos.keys())}")
     
+    votaciones_dict = {votacion.id: votacion for votacion in votaciones}
+    
     context = {
-        'votaciones': votaciones,
+        'votaciones': votaciones_dict,  # Ahora es un diccionario
         'total_votaciones': total_votaciones,
         'total_votos': total_votos,
         'graficos': graficos,
@@ -231,3 +233,38 @@ def dashboard_votaciones(request):
     }
     
     return render(request, 'admin/dashboard_votaciones.html', context)
+
+@staff_member_required
+def grafico_modal(request, votacion_id):
+    """API que devuelve los datos del gráfico para un modal específico"""
+    print(f"Ejecutando grafico_modal para votación {votacion_id}")
+    ejecutar_procedimiento_reporte()
+    
+    # Obtener los datos del reporte
+    datos_reporte = obtener_datos_reporte()
+    
+    # Filtrar datos para esta votación
+    datos_votacion = [d for d in datos_reporte if d['votacion_id'] == votacion_id]
+    
+    if not datos_votacion:
+        return JsonResponse({'error': 'No hay datos para esta votación'}, status=404)
+        
+    try:
+        # Preparar datos en formato adecuado para el gráfico
+        opciones = [d['opcion_nombre'] for d in datos_votacion]
+        votos = [d['total_votos'] for d in datos_votacion]
+        porcentajes = [d['porcentaje'] for d in datos_votacion]
+        etiquetas = [f"{op} ({pct}%)" for op, pct in zip(opciones, porcentajes)]
+        
+        return JsonResponse({
+            'titulo': datos_votacion[0]['votacion_nombre'],
+            'datos': {
+                'labels': etiquetas,
+                'values': votos
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
