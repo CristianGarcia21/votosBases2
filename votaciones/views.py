@@ -40,13 +40,6 @@ def votar(request, opcion_id):
     # Verifica si ya votó en esta votación
     ya_voto = Voto.objects.filter(usuario=usuario, opcion__votacion=votacion).exists()
     if ya_voto:
-        # Registrar intento en auditoría
-        AuditoriaVoto.objects.create(
-            voto=None,
-            accion='intento_duplicado',
-            datos_antes=None,
-            datos_despues=None
-        )
         # Opcional: bloquear usuario
         usuario.is_active = False
         usuario.save()
@@ -55,11 +48,5 @@ def votar(request, opcion_id):
 
     # Si no ha votado, guarda el voto
     voto = Voto.objects.create(usuario=usuario, opcion=opcion)
-    AuditoriaVoto.objects.create(
-        voto=voto,
-        accion='creado',
-        datos_antes=None,
-        datos_despues=None
-    )
     messages.success(request, "¡Voto registrado!")
     return redirect('panel_votaciones')

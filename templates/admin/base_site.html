@@ -1,0 +1,115 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<!-- Añadir Font Awesome para iconos -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    /* Eliminar espacio innecesario */
+    #container {
+        min-width: initial;
+    }
+    
+    div.breadcrumbs + div.breadcrumbs {
+        display: none;
+    }
+    
+    /* Estilos para el header con las acciones rápidas integradas */
+    #header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: auto;
+        padding: 15px 40px;
+    }
+    
+    #branding {
+        float: none;
+        flex-grow: 1;
+    }
+    
+    #user-tools {
+        float: none;
+        position: relative;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+    }
+    
+    .acciones-rapidas {
+        margin-left: 20px;
+        border-left: 1px solid rgba(255, 255, 255, 0.3);
+        padding-left: 20px;
+    }
+    
+    .acciones-btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        text-align: center;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
+    
+    .acciones-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Eliminar espacios innecesarios en otros elementos */
+    #content {
+        padding: 20px 40px;
+    }
+    
+    div.breadcrumbs {
+        padding: 10px 40px;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{{ site_header|default:_('Administración de Votaciones') }}</h1>
+{% endblock %}
+
+{% block usertools %}
+<div id="user-tools">
+    {% if has_permission %}
+    <div class="welcome-message">
+        {% translate 'Welcome,' %}
+        <strong>{% firstof user.get_short_name user.get_username %}</strong>.
+    </div>
+    <div class="user-links">
+        {% if user.is_active and user.is_staff %}
+            {% url 'django-admindocs-docroot' as docsroot %}
+            {% if docsroot %}
+                <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+            {% endif %}
+        {% endif %}
+        {% if user.has_usable_password %}
+            <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+        {% endif %}
+        <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
+    </div>
+    
+    <!-- Separamos claramente las acciones rápidas -->
+    <div class="acciones-rapidas">
+        {% if request.path == "/admin/dashboard-votaciones/" %}
+            <a href="{% url 'admin:index' %}" class="acciones-btn">
+                <i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Volver al Admin
+            </a>
+        {% else %}
+            <a href="{% url 'admin:dashboard_votaciones' %}" class="acciones-btn">
+                <i class="fas fa-chart-pie" style="margin-right: 5px;"></i> Ver Estadísticas
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

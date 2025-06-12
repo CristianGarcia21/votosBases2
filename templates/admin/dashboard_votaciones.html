@@ -1,0 +1,142 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load custom_filters %} 
+
+{% block title %}Dashboard de Votaciones{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .chart-container {
+        width: 45%;
+        margin-bottom: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stats-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .stats-card {
+        flex: 1;
+        min-width: 150px;
+        background-color: #fff;
+        border-radius: 5px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .stats-card h3 {
+        margin-top: 0;
+        color: #666;
+    }
+    .stats-card .value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+    .chart-title {
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+    }
+    .grafico-general {
+        width: 100%;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    
+    <h1>Dashboard de Votaciones</h1>
+    
+    <!-- Tarjetas de estadísticas -->
+    <div class="stats-cards">
+        <div class="stats-card">
+            <h3>Total Votaciones</h3>
+            <div class="value">{{ total_votaciones }}</div>
+        </div>
+        <div class="stats-card">
+            <h3>Total Votos</h3>
+            <div class="value">{{ total_votos }}</div>
+        </div>
+    </div>
+    
+    <!-- Gráfico general -->
+    {% if grafico_general %}
+    <div class="grafico-general">
+        {{ grafico_general }}
+    </div>
+    {% endif %}
+    
+    <!-- Container para los gráficos -->
+    <div class="dashboard-container">
+        {% if graficos %}
+            {% for votacion_id, grafico in graficos.items %}
+                <div class="chart-container" id="chart-container-{{ votacion_id }}">
+                    {{ grafico }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-data">No hay datos de votaciones para mostrar</div>
+        {% endif %}
+    </div>
+    
+    <!-- Listado de votaciones -->
+    <h2>Listado de Votaciones</h2>
+    <div class="results">
+        <table id="result_list">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Fecha inicio</th>
+                    <th>Fecha fin</th>
+                    <th>Total votos</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for votacion in votaciones %}
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td>{{ votacion.id }}</td>
+                    <td>{{ votacion.nombre }}</td>
+                    <td>{{ votacion.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ votacion.fecha_fin|date:"d/m/Y H:i" }}</td>
+                    <!-- Cambia la parte de la tabla que muestra los totales -->
+        <td>{{ votacion.total_votos }}</td>
+                    <td>
+                        <a href="{% url 'admin:votaciones_votacion_change' votacion.id %}" class="button">Editar</a>
+                        {% if votacion.id in graficos %}
+                        <a href="#chart-container-{{ votacion.id }}" class="button">
+                            <i class="fas fa-chart-bar" style="margin-right: 5px;"></i> Ver gráfico
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
